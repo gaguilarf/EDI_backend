@@ -1,0 +1,29 @@
+Crear un usuario (POST):
+curl -X POST -H "Content-Type: application/json" -d '{
+    "correo": "bhanccoco@unsa.edu.pe",
+    "nombres": "Bryan Hancco",
+    "contraseña": "123456",
+    "celular": "934949000",
+    "foto": "",
+    "redes": {
+        "linkedin": "linkedin.in/bryan-hancco"
+    }
+}' http://127.0.0.1:5000/usuarios
+
+Obtener todos los usuarios (GET):
+curl http://127.0.0.1:5000/usuarios
+
+Obtener un usuario específico (GET):
+curl http://127.0.0.1:5000/usuarios/bhanccoco@unsa.edu.pe
+
+Actualizar un usuario (PUT):
+curl -X PUT -H "Content-Type: application/json" -d '{
+    "celular": "999888777",
+    "redes": {
+        "linkedin": "linkedin.in/bryan-hancco- actualizado",
+        "twitter": "twitter.com/bryanhancco"
+    }
+}' http://127.0.0.1:5000/usuarios/bhanccoco@unsa.edu.pe
+
+Eliminar un usuario (DELETE):
+curl -X DELETE http://127.0.0.1:5000/usuarios/bhanccoco@unsa.edu.pe
