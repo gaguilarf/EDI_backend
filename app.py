@@ -121,6 +121,102 @@ def delete_usuario(id_usuario_o_correo):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/login', methods=['POST'])
+def login_usuario():
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+    try:
+        data = request.get_json()
+        correo = data.get("correo")
+        contraseña = data.get("contraseña")
+
+        if not correo or not contraseña:
+            return jsonify({"error": "Faltan el correo o la contraseña"}), 400
+
+        doc_ref = db.collection(USUARIOS_COLLECTION).document(correo)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        user_data = doc.to_dict()
+        if user_data.get("contraseña") != contraseña:
+            return jsonify({"error": "Contraseña incorrecta"}), 401
+
+        return jsonify({"message": "Inicio de sesión exitoso", "usuario": user_data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+    
+@app.route('/recuperar-contrasena', methods=['POST'])
+def recuperar_contrasena():
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+    try:
+        data = request.get_json()
+        correo = data.get("correo")
+
+        if not correo:
+            return jsonify({"error": "Correo no proporcionado"}), 400
+
+        doc_ref = db.collection(USUARIOS_COLLECTION).document(correo)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        return jsonify({
+            "message": f"Simulación: instrucciones de recuperación de contraseña enviadas a '{correo}'"
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/noticias', methods=['GET'])
+def listar_noticias():
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+    try:
+        noticias_ref = db.collection("noticia")
+        docs = noticias_ref.stream()
+        noticias = []
+        for doc in docs:
+            noticia = doc.to_dict()
+            noticia['id'] = doc.id
+            noticias.append(noticia)
+        return jsonify(noticias), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/noticia/<noticia_id>/reaccion', methods=['POST'])
+def modificar_reaccion(noticia_id):
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+    try:
+        data = request.get_json()
+        accion = data.get("accion")  # "agregar" o "quitar"
+
+        if accion not in ["agregar", "quitar"]:
+            return jsonify({"error": "Acción inválida, debe ser 'agregar' o 'quitar'"}), 400
+
+        noticia_ref = db.collection("noticia").document(noticia_id)
+        noticia_doc = noticia_ref.get()
+
+        if not noticia_doc.exists:
+            return jsonify({"error": "Noticia no encontrada"}), 404
+
+        noticia_data = noticia_doc.to_dict()
+        reacciones = noticia_data.get("reacciones", 0)
+
+        if accion == "agregar":
+            reacciones += 1
+        elif accion == "quitar" and reacciones > 0:
+            reacciones -= 1
+
+        noticia_ref.update({"reacciones": reacciones})
+
+        return jsonify({"message": "Reacción actualizada", "reacciones": reacciones}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
 
     app.run(debug=True, port=5000)
