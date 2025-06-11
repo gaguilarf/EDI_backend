@@ -12,6 +12,51 @@ except Exception as e:
     print(f"Error inicializando Firebase Admin SDK: {e}")
     db = None
 
+def obtener_acerca_usuario(correo_electronico):
+    if not db:
+        return None, "Firestore no inicializado"
+    try:
+        query = db.collection("acerca_usuario").where("id_usuario", "==", correo_electronico).limit(1)
+        docs = query.stream()
+        doc = next(docs, None)
+        if doc is None:
+            return None, "Documento acerca_usuario no encontrado"
+        
+        data = doc.to_dict()
+        result = {
+            "aptitudes": data.get("aptitudes", []),
+            "carrera": data.get("carrera", ""),
+            "categorias_interes": data.get("categorias_interes", ""),
+            "palabras_clave": data.get("palabras_clave", ""),
+            "semestre": data.get("semestre", 0),
+            "sobre_mi": data.get("sobre_mi", "")
+        }
+        return result, None
+    except Exception as e:
+        return None, str(e)
+
+
+def obtener_configuracion(correo_electronico):
+    if not db:
+        return None, "Firestore no inicializado"
+    try:
+        query = db.collection("configuracion").where("id_usuario", "==", correo_electronico).limit(1)
+        docs = query.stream()
+        doc = next(docs, None)
+        if doc is None:
+            return None, "Documento configuracion no encontrado"
+
+        data = doc.to_dict()
+        result = {
+            "is_disponibilidad": data.get("is_disponibilidad", False),
+            "is_notificacion": data.get("is_notificacion", False),
+            "is_visibilidad": data.get("is_visibilidad", False),
+        }
+        return result, None
+    except Exception as e:
+        return None, str(e)
+
+
 app = Flask(__name__)
 
 @app.route('/usuario', methods=['POST'])
@@ -216,6 +261,21 @@ def modificar_reaccion(noticia_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/usuario/<correo_electronico>/acerca', methods=['GET'])
+def get_acerca_usuario(correo_electronico):
+    data, error = obtener_acerca_usuario(correo_electronico)
+    if error:
+        return jsonify({"error": error}), 404
+    return jsonify(data), 200
+
+@app.route('/usuario/<correo_electronico>/configuracion', methods=['GET'])
+def get_configuracion_usuario(correo_electronico):
+    data, error = obtener_configuracion(correo_electronico)
+    if error:
+        return jsonify({"error": error}), 404
+    return jsonify(data), 200
+
 
 if __name__ == '__main__':
 
