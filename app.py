@@ -1,6 +1,7 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 from flask import Flask, request, jsonify
+import json
 
 try:
     cred = credentials.Certificate("firebase-credentials.json")
@@ -109,15 +110,31 @@ def get_usuario(id_usuario_o_correo):
     if not db:
         return jsonify({"error": "Firestore no inicializado"}), 500
     try:
+        # Fetch user data
         doc_ref = db.collection(USUARIOS_COLLECTION).document(id_usuario_o_correo)
         doc = doc_ref.get()
 
-        if doc.exists:
-            usuario_data = doc.to_dict()
-            usuario_data['id_documento'] = doc.id
-            return jsonify(usuario_data), 200
-        else:
+        if not doc.exists:
             return jsonify({"error": "Usuario no encontrado"}), 404
+
+        usuario_data = doc.to_dict()
+        usuario_data['id_documento'] = doc.id
+
+        # Fetch projects from the user's subcollection
+        proyectos_ref = doc_ref.collection("proyectos")
+        proyectos_docs = proyectos_ref.stream()
+
+        proyectos = []
+        for proyecto_doc in proyectos_docs:
+            proyecto_data = proyecto_doc.to_dict()
+            proyecto_data['id_documento'] = proyecto_doc.id
+            proyectos.append(proyecto_data)
+
+        # Add projects to user data
+        usuario_data['proyectos'] = proyectos
+
+        return jsonify(usuario_data), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -276,6 +293,21 @@ def get_configuracion_usuario(correo_electronico):
         return jsonify({"error": error}), 404
     return jsonify(data), 200
 
+@app.route('/noticias/cargar', methods=['POST'])
+def cargar_noticias():
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+    try:
+        with open('noticias.json', 'r', encoding='utf-8') as file:
+            noticias = json.load(file)
+
+        for noticia in noticias:
+            noticia_ref = db.collection("noticia").document(noticia["id"])
+            noticia_ref.set(noticia)
+
+        return jsonify({"message": "Noticias cargadas correctamente"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
 

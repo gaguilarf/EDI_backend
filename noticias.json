@@ -1,0 +1,102 @@
+[
+  {
+    "autor": "EPIS",
+    "cant_reacciones": 5,
+    "categorias": ["Trabajo"],
+    "descripcion": "Texto",
+    "fecha_publicacion": "Wed, 21 May 2025 00:55:16 GMT",
+    "id": "ibUemOOHDCPiF7BUXt7L",
+    "tipo": "Becas",
+    "titulo": "Texto"
+  },
+  {
+    "autor": "EPIS",
+    "cant_reacciones": 10,
+    "categorias": ["Eventos"],
+    "descripcion": "Evento importante",
+    "fecha_publicacion": "Thu, 22 May 2025 10:00:00 GMT",
+    "id": "event1",
+    "tipo": "Eventos",
+    "titulo": "Conferencia de Tecnología"
+  },
+  {
+    "autor": "EPIS",
+    "cant_reacciones": 3,
+    "categorias": ["Académico"],
+    "descripcion": "Nueva convocatoria académica",
+    "fecha_publicacion": "Fri, 23 May 2025 12:00:00 GMT",
+    "id": "acad1",
+    "tipo": "Académico",
+    "titulo": "Convocatoria Académica"
+  },
+  {
+    "autor": "EPIS",
+    "cant_reacciones": 7,
+    "categorias": ["Comunicados"],
+    "descripcion": "Comunicado oficial",
+    "fecha_publicacion": "Sat, 24 May 2025 14:00:00 GMT",
+    "id": "com1",
+    "tipo": "Comunicados",
+    "titulo": "Comunicado Importante"
+  },
+  {
+    "autor": "EPIS",
+    "cant_reacciones": 2,
+    "categorias": ["Becas"],
+    "descripcion": "Nueva beca disponible",
+    "fecha_publicacion": "Sun, 25 May 2025 16:00:00 GMT",
+    "id": "beca1",
+    "tipo": "Becas",
+    "titulo": "Beca Internacional"
+  },
+  {
+    "autor": "EPIS",
+    "cant_reacciones": 8,
+    "categorias": ["Eventos"],
+    "descripcion": "Evento de networking",
+    "fecha_publicacion": "Mon, 26 May 2025 18:00:00 GMT",
+    "id": "event2",
+    "tipo": "Eventos",
+    "titulo": "Networking para Profesionales"
+  },
+  {
+    "autor": "EPIS",
+    "cant_reacciones": 4,
+    "categorias": ["Académico"],
+    "descripcion": "Nueva publicación académica",
+    "fecha_publicacion": "Tue, 27 May 2025 20:00:00 GMT",
+    "id": "acad2",
+    "tipo": "Académico",
+    "titulo": "Publicación Académica"
+  },
+  {
+    "autor": "EPIS",
+    "cant_reacciones": 6,
+    "categorias": ["Comunicados"],
+    "descripcion": "Actualización de políticas",
+    "fecha_publicacion": "Wed, 28 May 2025 22:00:00 GMT",
+    "id": "com2",
+    "tipo": "Comunicados",
+    "titulo": "Actualización de Políticas"
+  },
+  {
+    "autor": "EPIS",
+    "cant_reacciones": 9,
+    "categorias": ["Becas"],
+    "descripcion": "Beca para estudiantes destacados",
+    "fecha_publicacion": "Thu, 29 May 2025 08:00:00 GMT",
+    "id": "beca2",
+    "tipo": "Becas",
+    "titulo": "Beca para Estudiantes"
+  },
+  {
+    "autor": "EPIS",
+    "cant_reacciones": 12,
+    "categorias": ["Eventos"],
+    "descripcion": "Evento de cierre de semestre",
+    "fecha_publicacion": "Fri, 30 May 2025 10:00:00 GMT",
+    "id": "event3",
+    "tipo": "Eventos",
+    "titulo": "Cierre de Semestre"
+  }
+]
