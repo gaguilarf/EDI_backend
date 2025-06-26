@@ -198,7 +198,6 @@ def create_proyecto(id_usuario_o_correo):
         proyecto_data['id_proyecto'] = doc_id
 
         return jsonify({
-            "message": "Proyecto creado correctamente",
             "proyecto": proyecto_data
         }), 201
 
