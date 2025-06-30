@@ -308,7 +308,34 @@ def cargar_noticias():
         return jsonify({"message": "Noticias cargadas correctamente"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/usuario/<id_usuario_o_correo>/proyectos', methods=['POST'])
+def add_proyecto_usuario(id_usuario_o_correo):
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No se proporcionaron datos del proyecto"}), 400
 
+        doc_ref = db.collection(USUARIOS_COLLECTION).document(id_usuario_o_correo)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        # Generar un ID único para el proyecto si no se proporciona
+        from uuid import uuid4
+        proyecto_id = data.get("id") or str(uuid4())
+        data["id"] = proyecto_id
+        data["id_usuario"] = id_usuario_o_correo
+
+        proyecto_ref = doc_ref.collection("proyectos").document(proyecto_id)
+        proyecto_ref.set(data)
+
+        return jsonify({"message": "Proyecto agregado correctamente", "proyecto": data}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 if __name__ == '__main__':
 
     app.run(debug=True, port=5000)
