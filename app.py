@@ -8,6 +8,7 @@ try:
     firebase_admin.initialize_app(cred)
     db = firestore.client()
     USUARIOS_COLLECTION = "usuario"
+    PROYECTOS_COLLECTION = "proyecto"
     print("Firebase Admin SDK inicializado correctamente.")
 except Exception as e:
     print(f"Error inicializando Firebase Admin SDK: {e}")
@@ -135,6 +136,135 @@ def get_usuario(id_usuario_o_correo):
 
         return jsonify(usuario_data), 200
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+#retornar lista de proyectos dado el correo del usuario
+@app.route('/usuario/<id_usuario_o_correo>/proyectos', methods=['GET'])
+def get_proyectos_by_usuario(id_usuario_o_correo):
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+    
+    try:
+        proyectos_ref = db.collection(PROYECTOS_COLLECTION)
+        query = proyectos_ref.where('id_usuario', '==', id_usuario_o_correo)
+        docs = query.stream()
+
+        proyectos = []
+        for doc in docs:
+            data = doc.to_dict()
+            data['id'] = doc.id  # Agregar el ID del documento si se necesita
+            proyectos.append(data)
+        print(proyectos)
+        return jsonify(proyectos), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+#crear proyecto dado el id del usuario
+@app.route('/usuario/<id_usuario_o_correo>/proyectos', methods=['POST'])
+def create_proyecto(id_usuario_o_correo):
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+    
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No se enviaron datos del proyecto"}), 400
+
+        titulo = data.get('titulo')
+        descripcion = data.get('descripcion')
+
+        if not titulo:
+            return jsonify({"error": "El campo 'titulo' es obligatorio"}), 400
+
+        # Datos base del proyecto
+        proyecto_data = {
+            'id_usuario': id_usuario_o_correo,
+            'titulo': titulo,
+            'descripcion': descripcion or ""
+        }
+
+        # Crear documento (Firestore genera ID automáticamente)
+        doc_ref = db.collection(PROYECTOS_COLLECTION).add(proyecto_data)
+        doc_id = doc_ref[1].id
+
+        # Actualizar el documento para guardar también el ID generado
+        db.collection(PROYECTOS_COLLECTION).document(doc_id).update({
+            'id_proyecto': doc_id
+        })
+
+        # Preparar respuesta
+        proyecto_data['id_proyecto'] = doc_id
+
+        return jsonify({
+            "proyecto": proyecto_data
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+#Actualizar proyecto dado el id del usuario y el id del proyecto
+@app.route('/usuario/<id_usuario_o_correo>/proyectos/<id_proyecto>', methods=['POST'])
+def update_proyecto_by_proyecto(id_usuario_o_correo, id_proyecto):
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+
+    try:
+         # Obtener datos del request (debe ser JSON)
+         #ejemplo
+         #{
+            #"titulo": "Nuevo título del proyecto",
+            #"descripcion": "Descripción actualizada"
+         #}
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No se proporcionaron datos para actualizar"}), 400
+
+        proyecto_ref = db.collection(PROYECTOS_COLLECTION).document(id_proyecto)
+        proyecto_doc = proyecto_ref.get()
+
+        if not proyecto_doc.exists:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+
+        proyecto_data = proyecto_doc.to_dict()
+
+        # Verifica que el proyecto pertenezca al usuario
+        if proyecto_data.get('id_usuario') != id_usuario_o_correo:
+            return jsonify({"error": "El proyecto no pertenece al usuario indicado"}), 403
+
+        # Actualizar el documento con los nuevos datos
+        proyecto_ref.update(data)
+
+        return jsonify({"message": "Proyecto actualizado exitosamente"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+#elimina un proyecto dado el  id del usuario y el id del proyecto
+@app.route('/usuario/<id_usuario_o_correo>/proyectos/<id_proyecto>', methods=['DELETE'])
+def delete_proyecto_by_proyecto(id_usuario_o_correo, id_proyecto):
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+    
+    try:
+        proyecto_ref = db.collection(PROYECTOS_COLLECTION).document(id_proyecto)
+        proyecto_doc = proyecto_ref.get()
+
+        if not proyecto_doc.exists:
+            return jsonify({"error": "Proyecto no encontrado"}), 404
+
+        proyecto_data = proyecto_doc.to_dict()
+
+        # Verificar que el proyecto pertenezca al usuario
+        if proyecto_data.get('id_usuario') != id_usuario_o_correo:
+            return jsonify({"error": "El proyecto no pertenece al usuario indicado"}), 403
+
+        # Eliminar el documento
+        proyecto_ref.delete()
+
+        return jsonify({"message": "Proyecto eliminado correctamente"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
