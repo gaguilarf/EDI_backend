@@ -456,15 +456,15 @@ def add_proyecto_usuario(id_usuario_o_correo):
         # Generar un ID único para el proyecto si no se proporciona
         from uuid import uuid4
         proyecto_id = data.get("id") or str(uuid4())
-        data["id"] = proyecto_id
-        data["id_usuario"] = id_usuario_o_correo
+
+        # Solo guardar los campos necesarios
+        proyecto_data = {
+            "titulo": data.get("titulo", ""),
+            "descripcion": data.get("descripcion", "")
+        }
 
         proyecto_ref = doc_ref.collection("proyectos").document(proyecto_id)
-        proyecto_ref.set(data)
-
-        return jsonify({"message": "Proyecto agregado correctamente", "proyecto": data}), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        proyecto_ref.set(proyecto_data)
     
 if __name__ == '__main__':
 
