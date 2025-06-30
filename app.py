@@ -465,7 +465,15 @@ def add_proyecto_usuario(id_usuario_o_correo):
 
         proyecto_ref = doc_ref.collection("proyectos").document(proyecto_id)
         proyecto_ref.set(proyecto_data)
-    
+    finally:
+        return jsonify({"message": "Proyecto agregado correctamente"}), 201
+        proyecto_data['id_proyecto'] = proyecto_id
+
+        return jsonify({
+            "proyecto": proyecto_data
+        }), 201
+        proyecto_ref.set(proyecto_data)
+        
 if __name__ == '__main__':
 
     app.run(debug=True, port=5000)
