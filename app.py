@@ -448,32 +448,44 @@ def add_proyecto_usuario(id_usuario_o_correo):
         if not data:
             return jsonify({"error": "No se proporcionaron datos del proyecto"}), 400
 
-        doc_ref = db.collection(USUARIOS_COLLECTION).document(id_usuario_o_correo)
+        # Verificar que el usuario existe
+        doc_ref = db.collection("usuario").document(id_usuario_o_correo)
         doc = doc_ref.get()
         if not doc.exists:
             return jsonify({"error": "Usuario no encontrado"}), 404
 
-        # Generar un ID único para el proyecto si no se proporciona
-        from uuid import uuid4
-        proyecto_id = data.get("id") or str(uuid4())
+        # Generar ID automático si no se proporciona
+        proyecto_id = data.get("id") or data.get("id_documento")
+        if not proyecto_id:
+            # Generar un ID único automáticamente
+            proyecto_ref = doc_ref.collection("proyectos").document()
+            proyecto_id = proyecto_ref.id
+        else:
+            proyecto_ref = doc_ref.collection("proyectos").document(proyecto_id)
 
-        # Solo guardar los campos necesarios
+        # Validar campos requeridos
+        titulo = data.get("titulo")
+        if not titulo:
+            return jsonify({"error": "El campo 'titulo' es obligatorio"}), 400
+
         proyecto_data = {
-            "titulo": data.get("titulo", ""),
-            "descripcion": data.get("descripcion", "")
+            "id_proyecto": proyecto_id,
+            "titulo": titulo,
+            "descripcion": data.get("descripcion", ""),
+            "id_usuario": id_usuario_o_correo
         }
 
-        proyecto_ref = doc_ref.collection("proyectos").document(proyecto_id)
+        # Guardar el proyecto en la subcolección del usuario
         proyecto_ref.set(proyecto_data)
-    finally:
-        return jsonify({"message": "Proyecto agregado correctamente"}), 201
-        proyecto_data['id_proyecto'] = proyecto_id
 
         return jsonify({
+            "message": "Proyecto agregado correctamente",
             "proyecto": proyecto_data
         }), 201
-        proyecto_ref.set(proyecto_data)
-        
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
 
     app.run(debug=True, port=5000)
