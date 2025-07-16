@@ -207,7 +207,7 @@ def create_proyecto(id_usuario_o_correo):
 
 #Actualizar proyecto dado el id del usuario y el id del proyecto
 @app.route('/usuario/<id_usuario_o_correo>/proyectos/<id_proyecto>', methods=['POST'])
-def update_proyecto_by_proyecto(id_usuario_o_correo, id_proyecto):
+def update_proyecto_by_idproyecto(id_usuario_o_correo, id_proyecto):
     if not db:
         return jsonify({"error": "Firestore no inicializado"}), 500
 
@@ -416,12 +416,51 @@ def get_acerca_usuario(correo_electronico):
         return jsonify({"error": error}), 404
     return jsonify(data), 200
 
+### CONFIGURACION
 @app.route('/usuario/<correo_electronico>/configuracion', methods=['GET'])
 def get_configuracion_usuario(correo_electronico):
     data, error = obtener_configuracion(correo_electronico)
     if error:
         return jsonify({"error": error}), 404
     return jsonify(data), 200
+
+#1 Actualizar la tabla configuracion del usuario
+@app.route('/usuario/<id_usuario_o_correo>/configuracion', methods=['PUT'])
+def update_configuracion_by_usuario(id_usuario_o_correo):
+    if not db:
+        return jsonify({"error": "Firestore no inicializado"}), 500
+
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No se proporcionaron datos para actualizar"}), 400
+
+        # Campos que NO deben ser actualizados
+        campos_prohibidos = {'id_usuario'}
+
+        # Filtrar data para excluir campos prohibidos
+        data_filtrada = {k: v for k, v in data.items() if k not in campos_prohibidos}
+
+        if not data_filtrada:
+            return jsonify({"error": "No se proporcionaron campos válidos para actualizar"}), 400
+
+        configuracion_ref = db.collection('configuracion')
+        query = configuracion_ref.where('id_usuario', '==', id_usuario_o_correo).limit(1).stream()
+
+        config_doc = next(query, None)
+
+        if config_doc is None:
+            return jsonify({"error": "Configuración no encontrada para este usuario"}), 404
+
+        # Actualizar solo los campos permitidos
+        config_doc.reference.update(data_filtrada)
+
+        return jsonify({"message": "Configuración actualizada exitosamente"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+### FIN CONFIGURACION
 
 @app.route('/noticias/cargar', methods=['POST'])
 def cargar_noticias():
