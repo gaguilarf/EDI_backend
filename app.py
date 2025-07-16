@@ -146,16 +146,22 @@ def get_proyectos_by_usuario(id_usuario_o_correo):
         return jsonify({"error": "Firestore no inicializado"}), 500
     
     try:
-        proyectos_ref = db.collection(PROYECTOS_COLLECTION)
-        query = proyectos_ref.where('id_usuario', '==', id_usuario_o_correo)
-        docs = query.stream()
+        # Verificar que el usuario existe
+        doc_ref = db.collection("usuario").document(id_usuario_o_correo)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        # Obtener proyectos de la subcolección
+        proyectos_ref = doc_ref.collection("proyectos")
+        docs = proyectos_ref.stream()
 
         proyectos = []
         for doc in docs:
             data = doc.to_dict()
-            data['id'] = doc.id  # Agregar el ID del documento si se necesita
+            data['id_documento'] = doc.id  # Agregar el ID del documento
             proyectos.append(data)
-        print(proyectos)
+        
         return jsonify(proyectos), 200
         
     except Exception as e:
@@ -172,32 +178,40 @@ def create_proyecto(id_usuario_o_correo):
         if not data:
             return jsonify({"error": "No se enviaron datos del proyecto"}), 400
 
+        # Verificar que el usuario existe
+        doc_ref = db.collection("usuario").document(id_usuario_o_correo)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
         titulo = data.get('titulo')
         descripcion = data.get('descripcion')
 
         if not titulo:
             return jsonify({"error": "El campo 'titulo' es obligatorio"}), 400
 
-        # Datos base del proyecto
+        # Generar ID automático si no se proporciona
+        proyecto_id = data.get("id") or data.get("id_documento")
+        if not proyecto_id:
+            # Generar un ID único automáticamente en la subcolección
+            proyecto_ref = doc_ref.collection("proyectos").document()
+            proyecto_id = proyecto_ref.id
+        else:
+            proyecto_ref = doc_ref.collection("proyectos").document(proyecto_id)
+
+        # Datos del proyecto
         proyecto_data = {
+            'id_proyecto': proyecto_id,
             'id_usuario': id_usuario_o_correo,
             'titulo': titulo,
             'descripcion': descripcion or ""
         }
 
-        # Crear documento (Firestore genera ID automáticamente)
-        doc_ref = db.collection(PROYECTOS_COLLECTION).add(proyecto_data)
-        doc_id = doc_ref[1].id
-
-        # Actualizar el documento para guardar también el ID generado
-        db.collection(PROYECTOS_COLLECTION).document(doc_id).update({
-            'id_proyecto': doc_id
-        })
-
-        # Preparar respuesta
-        proyecto_data['id_proyecto'] = doc_id
+        # Guardar en la subcolección del usuario
+        proyecto_ref.set(proyecto_data)
 
         return jsonify({
+            "message": "Proyecto agregado correctamente",
             "proyecto": proyecto_data
         }), 201
 
@@ -212,27 +226,22 @@ def update_proyecto_by_idproyecto(id_usuario_o_correo, id_proyecto):
         return jsonify({"error": "Firestore no inicializado"}), 500
 
     try:
-         # Obtener datos del request (debe ser JSON)
-         #ejemplo
-         #{
-            #"titulo": "Nuevo título del proyecto",
-            #"descripcion": "Descripción actualizada"
-         #}
         data = request.get_json()
         if not data:
             return jsonify({"error": "No se proporcionaron datos para actualizar"}), 400
 
-        proyecto_ref = db.collection(PROYECTOS_COLLECTION).document(id_proyecto)
+        # Verificar que el usuario existe
+        doc_ref = db.collection("usuario").document(id_usuario_o_correo)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        # Obtener el proyecto de la subcolección
+        proyecto_ref = doc_ref.collection("proyectos").document(id_proyecto)
         proyecto_doc = proyecto_ref.get()
 
         if not proyecto_doc.exists:
             return jsonify({"error": "Proyecto no encontrado"}), 404
-
-        proyecto_data = proyecto_doc.to_dict()
-
-        # Verifica que el proyecto pertenezca al usuario
-        if proyecto_data.get('id_usuario') != id_usuario_o_correo:
-            return jsonify({"error": "El proyecto no pertenece al usuario indicado"}), 403
 
         # Actualizar el documento con los nuevos datos
         proyecto_ref.update(data)
@@ -242,26 +251,27 @@ def update_proyecto_by_idproyecto(id_usuario_o_correo, id_proyecto):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-#elimina un proyecto dado el  id del usuario y el id del proyecto
+#elimina un proyecto dado el id del usuario y el id del proyecto
 @app.route('/usuario/<id_usuario_o_correo>/proyectos/<id_proyecto>', methods=['DELETE'])
 def delete_proyecto_by_proyecto(id_usuario_o_correo, id_proyecto):
     if not db:
         return jsonify({"error": "Firestore no inicializado"}), 500
     
     try:
-        proyecto_ref = db.collection(PROYECTOS_COLLECTION).document(id_proyecto)
+        # Verificar que el usuario existe
+        doc_ref = db.collection("usuario").document(id_usuario_o_correo)
+        doc = doc_ref.get()
+        if not doc.exists:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        # Obtener el proyecto de la subcolección
+        proyecto_ref = doc_ref.collection("proyectos").document(id_proyecto)
         proyecto_doc = proyecto_ref.get()
 
         if not proyecto_doc.exists:
             return jsonify({"error": "Proyecto no encontrado"}), 404
 
-        proyecto_data = proyecto_doc.to_dict()
-
-        # Verificar que el proyecto pertenezca al usuario
-        if proyecto_data.get('id_usuario') != id_usuario_o_correo:
-            return jsonify({"error": "El proyecto no pertenece al usuario indicado"}), 403
-
-        # Eliminar el documento
+        # Eliminar el documento de la subcolección
         proyecto_ref.delete()
 
         return jsonify({"message": "Proyecto eliminado correctamente"}), 200
@@ -477,7 +487,7 @@ def cargar_noticias():
         return jsonify({"message": "Noticias cargadas correctamente"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    
 if __name__ == '__main__':
 
     app.run(debug=True, port=5000)
