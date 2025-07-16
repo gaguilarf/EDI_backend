@@ -53,6 +53,7 @@ def obtener_configuracion(correo_electronico):
             "is_disponibilidad": data.get("is_disponibilidad", False),
             "is_notificacion": data.get("is_notificacion", False),
             "is_visibilidad": data.get("is_visibilidad", False),
+             "categorias_interes": data.get("categorias_interes", [])
         }
         return result, None
     except Exception as e:
