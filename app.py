@@ -18,25 +18,24 @@ def obtener_acerca_usuario(correo_electronico):
     if not db:
         return None, "Firestore no inicializado"
     try:
-        query = db.collection("acerca_usuario").where("id_usuario", "==", correo_electronico).limit(1)
-        docs = query.stream()
-        doc = next(docs, None)
-        if doc is None:
+        # Accede directamente al documento por ID
+        doc_ref = db.collection("acerca_usuario").document(correo_electronico)
+        doc = doc_ref.get()
+
+        if not doc.exists:
             return None, "Documento acerca_usuario no encontrado"
-        
+
         data = doc.to_dict()
         result = {
-            "aptitudes": data.get("aptitudes", []),
+            "nombres": data.get("nombres", ""),
             "carrera": data.get("carrera", ""),
-            "categorias_interes": data.get("categorias_interes", ""),
-            "palabras_clave": data.get("palabras_clave", ""),
+            "competencias": data.get("competencias", ""),
             "semestre": data.get("semestre", 0),
             "sobre_mi": data.get("sobre_mi", "")
         }
         return result, None
     except Exception as e:
         return None, str(e)
-
 
 def obtener_configuracion(correo_electronico):
     if not db:
